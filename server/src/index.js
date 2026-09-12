@@ -47,6 +47,23 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/garden', require('./routes/garden'));
 app.use('/api/shop', require('./routes/shop'));
 
+const path = require('path');
+
+// Serve static frontend files from client/dist
+const clientDistPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
+
+// For SPA routing, any non-API GET request serves index.html
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    const indexPath = path.join(clientDistPath, 'index.html');
+    return res.sendFile(indexPath, (err) => {
+      if (err) next();
+    });
+  }
+  next();
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err);

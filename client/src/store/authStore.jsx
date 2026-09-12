@@ -1,11 +1,11 @@
 import React, { createContext, useReducer, useEffect, useContext } from 'react';
-import api from '../config/api';
+import api, { setAccessToken } from '../config/api';
 
 const AuthContext = createContext();
 
 const initialState = {
   user: null,
-  accessToken: null,
+  accessToken: localStorage.getItem('cultivate_token') || null,
   loading: true,
 };
 
@@ -14,11 +14,13 @@ function authReducer(state, action) {
     case 'SET_USER':
       return { ...state, user: action.payload };
     case 'SET_TOKEN':
+      setAccessToken(action.payload);
       return { ...state, accessToken: action.payload };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'LOGOUT':
-      return { ...initialState, loading: false };
+      setAccessToken(null);
+      return { ...initialState, accessToken: null, loading: false };
     default:
       return state;
   }
@@ -28,27 +30,64 @@ export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
-    const checkSession = async () => {
+    let isMounted = true;
+
+    const initAuth = async () => {
       try {
-        // Try to get user info — the interceptor will auto-refresh the token if needed
-        const res = await api.get('/auth/me');
-        if (res.data?.user) {
-          dispatch({ type: 'SET_USER', payload: res.data.user });
+        // 1. If we already have an access token stored, check current user
+        if (state.accessToken) {
+          try {
+            const meRes = await api.get('/auth/me');
+            if (isMounted && meRes.data?.user) {
+              dispatch({ type: 'SET_USER', payload: meRes.data.user });
+              dispatch({ type: 'SET_LOADING', payload: false });
+              return;
+            }
+          } catch (e) {
+            // Token may have expired, proceed to refresh attempt
+          }
+        }
+
+        // 2. Try to refresh token using httpOnly cookie
+        const refreshRes = await api.post('/auth/refresh');
+        if (isMounted && refreshRes.data?.accessToken) {
+          dispatch({ type: 'SET_TOKEN', payload: refreshRes.data.accessToken });
+          if (refreshRes.data.user) {
+            dispatch({ type: 'SET_USER', payload: refreshRes.data.user });
+          } else {
+            const meRes = await api.get('/auth/me');
+            if (isMounted) {
+              dispatch({ type: 'SET_USER', payload: meRes.data?.user || null });
+            }
+          }
+        } else if (isMounted) {
+          dispatch({ type: 'LOGOUT' });
         }
       } catch (err) {
-        // Not authenticated — that's fine, user will be redirected by ProtectedRoute
-        dispatch({ type: 'SET_USER', payload: null });
+        // Not authenticated — visitor is a guest
+        if (isMounted) {
+          dispatch({ type: 'LOGOUT' });
+        }
       } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
+        if (isMounted) {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
       }
     };
-    checkSession();
+
+    initAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const logout = async () => {
     try {
       await api.post('/auth/logout');
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
     dispatch({ type: 'LOGOUT' });
   };
 

@@ -26,6 +26,9 @@ export default function Signup() {
     setLoading(true);
     try {
       const res = await api.post('/auth/signup', { displayName, email, password });
+      if (res.data?.accessToken) {
+        dispatch({ type: 'SET_TOKEN', payload: res.data.accessToken });
+      }
       dispatch({ type: 'SET_USER', payload: res.data.user });
       navigate('/garden');
     } catch (err) {

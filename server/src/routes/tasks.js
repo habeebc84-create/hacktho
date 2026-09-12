@@ -105,6 +105,9 @@ router.post('/:id/complete', async (req, res, next) => {
       streakMultiplier: multiplier
     });
 
+    user.markModified('garden');
+    user.markModified('growthTypes');
+
     await Promise.all([
       user.save(),
       task.save(),

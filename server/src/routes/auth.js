@@ -4,12 +4,34 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+});
+
 const generateAccessToken = (user) => {
   return jwt.sign(
     { sub: user._id, email: user.email },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: process.env.JWT_ACCESS_EXPIRES || '15m' }
   );
+};
+
+const generateAndSetRefreshToken = async (user, res) => {
+  const refreshToken = jwt.sign(
+    { sub: user._id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d' }
+  );
+
+  const salt = await bcrypt.genSalt(10);
+  user.refreshTokenHash = await bcrypt.hash(refreshToken, salt);
+  await user.save();
+
+  res.cookie('refreshToken', refreshToken, getCookieOptions());
+  return refreshToken;
 };
 
 router.post('/signup', async (req, res, next) => {
@@ -35,14 +57,15 @@ router.post('/signup', async (req, res, next) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const newUser = new User({
-      email,
+      email: email.toLowerCase(),
       passwordHash,
-      displayName
+      displayName: displayName.trim()
     });
 
     await newUser.save();
 
     const accessToken = generateAccessToken(newUser);
+    await generateAndSetRefreshToken(newUser, res);
 
     res.status(201).json({
       user: { id: newUser._id, displayName: newUser.displayName, email: newUser.email },
@@ -72,22 +95,7 @@ router.post('/login', async (req, res, next) => {
     }
 
     const accessToken = generateAccessToken(user);
-    const refreshToken = jwt.sign(
-      { sub: user._id },
-      process.env.JWT_REFRESH_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d' }
-    );
-
-    const salt = await bcrypt.genSalt(10);
-    user.refreshTokenHash = await bcrypt.hash(refreshToken, salt);
-    await user.save();
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+    await generateAndSetRefreshToken(user, res);
 
     res.json({
       user: { id: user._id, displayName: user.displayName, email: user.email },
@@ -123,7 +131,10 @@ router.post('/refresh', async (req, res, next) => {
     }
 
     const newAccessToken = generateAccessToken(user);
-    res.json({ accessToken: newAccessToken });
+    res.json({
+      accessToken: newAccessToken,
+      user: { id: user._id, displayName: user.displayName, email: user.email }
+    });
   } catch (err) {
     next(err);
   }
@@ -144,14 +155,14 @@ router.post('/logout', async (req, res, next) => {
         // ignore errors during logout
       }
     }
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', getCookieOptions());
     res.json({ message: 'Logged out successfully' });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /me — verify current session (requires auth middleware applied here)
+// GET /me — verify current session
 const authMiddleware = require('../middleware/auth');
 router.get('/me', authMiddleware, async (req, res, next) => {
   try {

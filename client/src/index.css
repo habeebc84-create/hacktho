@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-forest: #1B3A2F;
+  --color-moss: #7FA88C;
+  --color-soil: #5A4632;
+  --color-sunlight: #F2B84B;
+  --color-cream: #F7F3E9;
+  --color-bloom: #E8A0A0;
+  
+  --font-display: 'Fraunces', serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+}
+
+:root {
+  --forest: #1B3A2F;
+  --moss: #7FA88C;
+  --soil: #5A4632;
+  --sunlight: #F2B84B;
+  --cream: #F7F3E9;
+  --bloom: #E8A0A0;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--forest);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-display);
+}
+
+.perspective-garden {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+@keyframes plant-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(2deg); }
+}
+
+.plant-sway {
+  animation: plant-sway 4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--cream) 25%, var(--moss) 50%, var(--cream) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.glow-moss {
+  box-shadow: 0 0 20px rgba(127, 168, 140, 0.4);
+}
+
+.glow-sunlight {
+  box-shadow: 0 0 30px rgba(242, 184, 75, 0.5);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--moss);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--forest);
+}

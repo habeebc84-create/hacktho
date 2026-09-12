@@ -94,6 +94,19 @@ export default function Login() {
             {loading ? 'Entering Garden...' : '🌿 Enter Garden'}
           </button>
 
+          <button
+            type="button"
+            onClick={() => {
+              const demoUser = { id: 'demo_user', displayName: 'Master Gardener', email: 'gardener@cultivate.app' };
+              localStorage.setItem('cultivate_user', JSON.stringify(demoUser));
+              dispatch({ type: 'SET_USER', payload: demoUser });
+              navigate('/garden');
+            }}
+            className="w-full bg-sunlight/20 text-forest border border-sunlight/50 py-3 rounded-xl font-bold text-sm hover:bg-sunlight transition-colors flex items-center justify-center gap-2"
+          >
+            <span>✨</span> Explore Instantly in Demo Mode
+          </button>
+
           <p className="text-center text-soil mt-4">
             Don't have a garden yet?{' '}
             <Link to="/signup" className="font-bold text-forest hover:text-moss underline">Plant a seed</Link>

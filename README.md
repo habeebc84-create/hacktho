@@ -2,7 +2,11 @@
 
 > *Reframe your personal productivity as a living garden. Plant seeds, tend your growth, watch yourself bloom.*
 
+[![Live App](https://img.shields.io/badge/Live_Demo-hacktho.vercel.app-2ea44f?style=for-the-badge&logo=vercel)](https://hacktho.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+🌐 **Live Web Application:** [https://hacktho.vercel.app](https://hacktho.vercel.app)  
+📦 **Repository:** [https://github.com/habeebc84-create/hacktho](https://github.com/habeebc84-create/hacktho)
 
 ---
 
@@ -33,23 +37,18 @@ cultivate/
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local)
 
-### Prerequisites
-- Node.js 18+
-- MongoDB Atlas account (free tier works)
+### 1-Click Launch (Windows)
+Double-click `run.bat` or run `run.ps1` in PowerShell — it automatically boots the backend, frontend, and launches your browser at `http://localhost:5173`!
 
-### 1. Clone & Install
-
+### One-Command Runner
 ```bash
-git clone https://github.com/YOUR_USERNAME/cultivate.git
-cd cultivate
+# Install root dependencies
+npm install
 
-# Install backend deps
-cd server && npm install
-
-# Install frontend deps
-cd ../client && npm install
+# Start both backend and frontend concurrently
+npm run dev
 ```
 
 ### 2. Configure Environment Variables

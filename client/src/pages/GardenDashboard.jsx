@@ -31,9 +31,26 @@ export default function GardenDashboard() {
   const navigate = useNavigate();
   const { state: { user }, logout } = useAuth();
   const { data: garden, isLoading: gardenLoading } = useGarden();
-  const { tasksQuery } = useTasks();
+  const { tasksQuery, createTask } = useTasks();
   const [levelUpData, setLevelUpData] = useState(null);
   const [showSeedForm, setShowSeedForm] = useState(false);
+  const [quickTitle, setQuickTitle] = useState('');
+  const [quickType, setQuickType] = useState('body');
+  const [quickDiff, setQuickDiff] = useState('medium');
+
+  const handleQuickPlant = (e) => {
+    e.preventDefault();
+    if (!quickTitle.trim()) return;
+    createTask.mutate(
+      { title: quickTitle.trim(), growthType: quickType, difficulty: quickDiff },
+      {
+        onSuccess: () => {
+          setQuickTitle('');
+          setShowSeedForm(false);
+        }
+      }
+    );
+  };
 
   const winterDormancy = garden?.garden?.seasonStreak === 0 && garden?.garden?.lastActiveDate;
   const streak = garden?.garden?.seasonStreak ?? 0;
@@ -207,6 +224,101 @@ export default function GardenDashboard() {
       >
         +
       </motion.button>
+
+      {/* Quick Plant Seed Slide-Up Modal */}
+      <AnimatePresence>
+        {showSeedForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-forest/70 backdrop-blur-sm p-4"
+            onClick={() => setShowSeedForm(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl border border-moss/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-display text-2xl font-bold text-forest">🌱 Plant a New Seed</h3>
+                <button
+                  onClick={() => setShowSeedForm(false)}
+                  className="text-soil/60 hover:text-forest text-2xl font-bold p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleQuickPlant} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-forest mb-1">Seed Title</label>
+                  <input
+                    value={quickTitle}
+                    onChange={(e) => setQuickTitle(e.target.value)}
+                    placeholder="e.g. 20 min morning meditation..."
+                    className="w-full bg-cream px-4 py-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-forest text-sm text-forest"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-forest mb-1">Growth Domain</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {GROWTH_TYPES.map((type) => (
+                      <button
+                        type="button"
+                        key={type.key}
+                        onClick={() => setQuickType(type.key)}
+                        className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all ${
+                          quickType === type.key
+                            ? 'bg-forest text-cream shadow-md scale-105'
+                            : 'bg-cream text-forest hover:bg-moss/20'
+                        }`}
+                      >
+                        <span className="text-lg">{type.icon}</span>
+                        <span>{type.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-forest mb-1">Difficulty & Sunlight</label>
+                  <select
+                    value={quickDiff}
+                    onChange={(e) => setQuickDiff(e.target.value)}
+                    className="w-full bg-cream px-4 py-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-forest text-sm text-forest"
+                  >
+                    <option value="easy">Easy — 15 ☀️ Sunlight, 3 🌿 Nutrients</option>
+                    <option value="medium">Medium — 30 ☀️ Sunlight, 7 🌿 Nutrients</option>
+                    <option value="hard">Hard — 60 ☀️ Sunlight, 15 🌿 Nutrients</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSeedForm(false)}
+                    className="flex-1 py-3 border border-soil/20 rounded-xl font-bold text-soil hover:bg-cream transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createTask.isPending}
+                    className="flex-1 py-3 bg-forest text-cream rounded-xl font-bold hover:bg-moss transition-colors shadow-md text-sm flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <span>🌱</span> {createTask.isPending ? 'Planting...' : 'Plant Seed'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -4,22 +4,27 @@ import { useAuth } from '../store/authStore';
 import api from '../config/api';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { dispatch } = useAuth();
-  const navigate = useNavigate();
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const { dispatch }            = useAuth();
+  const navigate                = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!email || !password) return;
+    setError('');
+    if (!email || !password) {
+      setError('Email and password are required.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
       dispatch({ type: 'SET_USER', payload: res.data.user });
       navigate('/garden');
     } catch (err) {
-      // Handle error visually
+      setError(err?.response?.data?.error ?? 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -27,8 +32,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex bg-cream text-forest font-body">
+      {/* Decorative Panel */}
       <div className="hidden md:flex w-1/2 bg-forest flex-col items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-moss via-forest to-forest"></div>
+        <div className="absolute inset-0 opacity-20" style={{background: 'radial-gradient(circle at center, #7FA88C, #1B3A2F)'}} />
         <svg width="200" height="200" viewBox="0 0 100 100" className="z-10 drop-shadow-2xl">
           <path d="M50 90 Q 50 40 50 20" fill="none" stroke="#7FA88C" strokeWidth="4" />
           <path d="M50 60 Q 30 50 40 70" fill="#7FA88C" />
@@ -36,44 +42,58 @@ export default function Login() {
           <circle cx="50" cy="20" r="10" fill="#F2B84B" />
         </svg>
         <h2 className="text-cream text-4xl font-display font-bold mt-8 z-10">Welcome Back</h2>
+        <p className="text-cream/70 mt-2 z-10">Your garden has been waiting.</p>
       </div>
 
+      {/* Form */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8">
-        <form onSubmit={handleLogin} className="max-w-md w-full space-y-6 bg-white p-8 rounded-3xl shadow-sm border border-moss/20">
-          <h1 className="text-3xl font-display font-bold text-center mb-8 text-forest">Login to Cultivate</h1>
-          
-          <div className="space-y-2">
-            <label className="font-bold text-sm">Email Address</label>
-            <input 
+        <form onSubmit={handleLogin} className="max-w-md w-full space-y-5 bg-white p-8 rounded-3xl shadow-sm border border-moss/20" noValidate>
+          <h1 className="text-3xl font-display font-bold text-center mb-6 text-forest">Enter Your Garden</h1>
+
+          {error && (
+            <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label htmlFor="email" className="font-bold text-sm text-forest">Email Address</label>
+            <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-cream px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest transition-shadow"
+              placeholder="you@example.com"
+              className="w-full bg-cream px-4 py-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-forest transition-shadow"
               required
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="font-bold text-sm">Password</label>
-            <input 
+          <div className="space-y-1">
+            <label htmlFor="password" className="font-bold text-sm text-forest">Password</label>
+            <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-cream px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest transition-shadow"
+              placeholder="Your password"
+              className="w-full bg-cream px-4 py-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-forest transition-shadow"
               required
             />
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading || !email || !password}
+          <button
+            type="submit"
+            disabled={loading}
             className="w-full bg-forest text-cream py-4 rounded-xl font-bold text-lg hover:bg-moss transition-colors shadow-md disabled:opacity-50"
+            aria-busy={loading}
           >
-            {loading ? 'Entering Garden...' : 'Enter Garden'}
+            {loading ? 'Entering Garden...' : '🌿 Enter Garden'}
           </button>
 
-          <p className="text-center text-soil mt-6">
-            Don't have a garden yet? <Link to="/signup" className="font-bold hover:text-forest underline">Plant a seed</Link>
+          <p className="text-center text-soil mt-4">
+            Don't have a garden yet?{' '}
+            <Link to="/signup" className="font-bold text-forest hover:text-moss underline">Plant a seed</Link>
           </p>
         </form>
       </div>
